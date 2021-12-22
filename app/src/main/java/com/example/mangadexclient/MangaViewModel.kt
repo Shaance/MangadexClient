@@ -47,8 +47,12 @@ class MangaViewModel: ViewModel() {
         }
     }
 
-    fun getMangaList(context: Context, language: String = "en") {
-        val url = "$mangaApiUrl?availableTranslatedLanguage[]=$language"
+    fun getMangaList(context: Context,
+                     language: String = "en",
+                     offset: Int = 0,
+                     limit: Int = 20,
+    ) {
+        val url = "$mangaApiUrl?availableTranslatedLanguage[]=$language&offset=$offset&limit=$limit"
         val jsonObjectRequest = JsonObjectRequest(Request.Method.GET, url, null,
             { response -> onMangaListResponse(response, context)},
             { error -> TODO() }

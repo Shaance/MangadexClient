@@ -44,9 +44,9 @@ fun MangaCardList(mangaList: List<Manga>) {
 @Composable
 fun LoadingScreen() {
     Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Loading mangaList...")
         Icon(imageVector = Icons.Rounded.Refresh, contentDescription = "loading")
@@ -87,7 +87,8 @@ fun MangaCardText(manga: Manga) {
             style = MaterialTheme.typography.h2
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = manga.description,
+        Text(
+            text = manga.description,
             fontSize = 12.sp,
             style = MaterialTheme.typography.body2,
             maxLines = 7,
@@ -103,8 +104,8 @@ fun MangaCardThumbnail(coverUrl: String) {
         contentDescription = "Manga cover",
         contentScale = ContentScale.Crop,
         modifier = Modifier
-                .size(180.dp)
-                .padding(end = 8.dp)
+            .size(180.dp)
+            .padding(end = 8.dp)
     )
 }
 
