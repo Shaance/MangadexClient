@@ -143,6 +143,7 @@ class MangaViewModel: ViewModel() {
     private fun updateCompleteMangaObjectList(mangaId: String) {
         val completedMangaObject = _incompleteMangas[mangaId]!!.first
         _mangaList.value = _mangaList.value!! + listOf(completedMangaObject)
+        _incompleteMangas.remove(mangaId)
         println(message = completedMangaObject.toString())
     }
 
