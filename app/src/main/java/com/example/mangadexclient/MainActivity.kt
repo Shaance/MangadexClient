@@ -12,11 +12,11 @@ import androidx.compose.runtime.livedata.observeAsState
 import com.example.mangadexclient.ui.theme.MangadexClientTheme
 
 class MainActivity : ComponentActivity() {
-    private val mangaViewModel by viewModels<MangaViewModel>()
+    private val mangaListViewModel by viewModels<MangaListViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mangaViewModel.getMangaList(this) // start async calls to APIs
+        mangaListViewModel.getMangaList(this) // start async calls to APIs
 
         setContent {
             MangadexClientApp()
@@ -25,13 +25,15 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MangadexClientApp() {
-        val mangaList: List<Manga> by mangaViewModel.mangaList.observeAsState(listOf())
+        val mangaList: List<Manga> by mangaListViewModel.mangaList.observeAsState(listOf())
         MangadexClientTheme {
             Surface(color = MaterialTheme.colors.background) {
                 if (mangaList.isEmpty()) {
                     LoadingScreen()
                 } else {
-                    MangaCardList(mangaList = mangaList)
+                    MangaCardList(mangaList = mangaList, onLoadMore = {
+                        mangaListViewModel.getMangaList(this)
+                    })
                 }
             }
         }

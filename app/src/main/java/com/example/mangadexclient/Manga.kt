@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
@@ -13,7 +14,6 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,12 +32,20 @@ val mockedManga = Manga(
 )
 
 @Composable
-fun MangaCardList(mangaList: List<Manga>) {
-    LazyColumn {
+fun MangaCardList(mangaList: List<Manga>, onLoadMore : () -> Unit) {
+    val listState = rememberLazyListState()
+
+    LazyColumn(state = listState) {
         items(mangaList) { manga ->
             MangaCard(manga)
             Divider()
         }
+    }
+
+    // This will start loading more when reaches at total - 5 items
+    // Sweet spot should be list api limit / 2
+    listState.OnBottomReached(buffer = 10) {
+        onLoadMore()
     }
 }
 
@@ -120,7 +128,7 @@ fun DefaultPreview() {
     val mockedList = listOf(mockedManga, mockedManga)
     MangadexClientTheme {
         Surface(color = MaterialTheme.colors.background) {
-            MangaCardList(mockedList)
+            MangaCardList(mockedList) { }
         }
     }
 }

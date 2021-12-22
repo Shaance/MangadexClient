@@ -28,10 +28,11 @@ const val coverApiUrl = "https://api.mangadex.org/cover/"
 const val authorApiUrl = "https://api.mangadex.org/author"
 const val mangaApiUrl = "https://api.mangadex.org/manga"
 
-class MangaViewModel: ViewModel() {
+class MangaListViewModel: ViewModel() {
 
     // missing either author, coverUrl or both on initial manga obj from manga list API
     private var _incompleteMangas = ConcurrentHashMap<String, Pair<Manga, MangaRelationshipIds>>(10)
+    private var _seenMangas = mutableSetOf<String>()
     private var _mangaList = MutableLiveData(listOf<Manga>())
     val mangaList: LiveData<List<Manga>> = _mangaList
 
@@ -40,33 +41,45 @@ class MangaViewModel: ViewModel() {
         for (i in 0 until dataArray.length()) {
             val currentObject = dataArray.getJSONObject(i)
             val parsedManga = parseManga(currentObject)
-            val mangaRelationships = parseMangaRelationships(currentObject)
-            _incompleteMangas[parsedManga.id] = Pair(parsedManga, mangaRelationships)
-            getCoverArtUrl(parsedManga.id, context)
-            getAuthor(parsedManga.id, context)
+            if (parsedManga != null) {
+                val mangaRelationships = parseMangaRelationships(currentObject)
+                _incompleteMangas[parsedManga.id] = Pair(parsedManga, mangaRelationships)
+                getCoverArtUrl(parsedManga.id, context)
+                getAuthor(parsedManga.id, context)
+            }
         }
     }
 
     fun getMangaList(context: Context,
                      language: String = "en",
-                     offset: Int = 0,
                      limit: Int = 20,
     ) {
+        val offset = _mangaList.value!!.size
         val url = "$mangaApiUrl?availableTranslatedLanguage[]=$language&offset=$offset&limit=$limit"
         val jsonObjectRequest = JsonObjectRequest(Request.Method.GET, url, null,
             { response -> onMangaListResponse(response, context)},
-            { error -> TODO() }
+            { error ->
+                run {
+                    println("Error while retrieving manga list with url:$url")
+                    print(error)
+                }
+            }
         )
         VolleyHttpClientSingleton.getInstance(context).addToRequestQueue(jsonObjectRequest)
     }
 
-    private fun parseManga(rawData: JSONObject): Manga {
-        val id = rawData.getString("id")
-        val attributes = rawData.getJSONObject("attributes")
-        val title = attributes.getJSONObject("title").getString("en")
-        val description = attributes.getJSONObject("description").getString("en")
-
-        return Manga(id = id, title = title, description = description)
+    private fun parseManga(rawData: JSONObject): Manga? {
+        return try {
+            val id = rawData.getString("id")
+            val attributes = rawData.getJSONObject("attributes")
+            val title = attributes.getJSONObject("title").getString("en")
+            val description = attributes.getJSONObject("description").getString("en")
+            Manga(id = id, title = title, description = description)
+        } catch (exception: Exception) {
+            // TODO do something smarter than this
+            println(exception)
+            null
+        }
     }
 
     private fun parseMangaRelationships(rawData: JSONObject): MangaRelationshipIds {
@@ -121,7 +134,12 @@ class MangaViewModel: ViewModel() {
         val coverArtId = _incompleteMangas[mangaId]!!.second.coverArtId
         val jsonObjectRequest = JsonObjectRequest(Request.Method.GET, coverApiUrl + coverArtId, null,
             { response -> onCoverArtUrlApiResponse(response, mangaId) },
-            { error -> TODO() }
+            { error ->
+                run {
+                    println("Error while retrieving covert art with url:$coverApiUrl")
+                    print(error)
+                }
+            }
         )
         VolleyHttpClientSingleton.getInstance(context).addToRequestQueue(jsonObjectRequest)
     }
@@ -146,9 +164,16 @@ class MangaViewModel: ViewModel() {
 
     private fun updateCompleteMangaObjectList(mangaId: String) {
         val completedMangaObject = _incompleteMangas[mangaId]!!.first
-        _mangaList.value = _mangaList.value!! + listOf(completedMangaObject)
         _incompleteMangas.remove(mangaId)
-        println(message = completedMangaObject.toString())
+        if (!_seenMangas.contains(completedMangaObject.id)) {
+            _mangaList.value = _mangaList.value!! + listOf(completedMangaObject)
+            _seenMangas.add(completedMangaObject.id)
+        }
+        /*
+            Else if the API returns a new item at the top, because we can't know about it, we will
+            have duplicates in the next list query with the offset.
+            We don't want duplicate, do nothing in that case
+         */
     }
 
     private fun getAuthor(mangaId: String, context: Context) {
@@ -156,7 +181,12 @@ class MangaViewModel: ViewModel() {
         val url = "$authorApiUrl?ids[]=$authorId"
         val jsonObjectRequest = JsonObjectRequest(Request.Method.GET, url, null,
             { response -> onAuthorApiResponse(response, mangaId) },
-            { error -> TODO() }
+            { error ->
+                run {
+                    println("Error while retrieving author with url:$url")
+                    print(error)
+                }
+            }
         )
         VolleyHttpClientSingleton.getInstance(context).addToRequestQueue(jsonObjectRequest)
     }
