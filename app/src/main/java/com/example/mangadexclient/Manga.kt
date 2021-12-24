@@ -62,16 +62,6 @@ fun LoadingScreen() {
 }
 
 @Composable
-fun MangaCardList2(mangaList: State<List<Manga>>) {
-    LazyColumn {
-        items(mangaList.value) { manga ->
-            MangaCard(manga)
-            Divider()
-        }
-    }
-}
-
-@Composable
 fun MangaCard(manga: Manga) {
     Row(modifier = Modifier.padding(all = 8.dp)) {
         MangaCardThumbnail(manga.coverUrl)
